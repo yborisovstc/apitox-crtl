@@ -1,0 +1,10 @@
+# Vim swap files
+*.swp
+
+# Vim exrc
+*.exrc
+
+# Build products
+*.bin
+*.elf
+*.hex
