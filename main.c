@@ -1,22 +1,23 @@
 /**
-  ******************************************************************************
-  * @file    SysTick/main.c 
-  * @author  MCD Application Team
-  * @version V1.0.0
-  * @date    09/13/2010
-  * @brief   Main program body.
-  ******************************************************************************
-  * @copy
-  *
-  * THE PRESENT FIRMWARE WHICH IS FOR GUIDANCE ONLY AIMS AT PROVIDING CUSTOMERS
-  * WITH CODING INFORMATION REGARDING THEIR PRODUCTS IN ORDER FOR THEM TO SAVE
-  * TIME. AS A RESULT, STMICROELECTRONICS SHALL NOT BE HELD LIABLE FOR ANY
-  * DIRECT, INDIRECT OR CONSEQUENTIAL DAMAGES WITH RESPECT TO ANY CLAIMS ARISING
-  * FROM THE CONTENT OF SUCH FIRMWARE AND/OR THE USE MADE BY CUSTOMERS OF THE
-  * CODING INFORMATION CONTAINED HEREIN IN CONNECTION WITH THEIR PRODUCTS.
-  *
-  * <h2><center>&copy; COPYRIGHT 2010 STMicroelectronics</center></h2>
-  */ 
+ ******************************************************************************
+ * @file    apitox_crtl/main.c
+ * @author  Yuri Borisov yuri.borisov.v@gmail.com
+ * @version 0.1.0
+ * @date    06/13/2015
+ * @brief   Main program body.
+ * @par
+ *  LED usage is as:
+ *  LED3 indicates the controller is working
+ *  LED4 indicates pulse burst
+ * @par
+ *  Pins usage:
+ *  PA_1 - pulse burst output
+ *  PA_7 - pulse burst frame
+ ******************************************************************************
+ * @copy
+ *
+ * <h2><center>&copy; COPYRIGHT 2015 Yuri Borisov</center></h2>
+ */
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -25,9 +26,9 @@
 #include "stm32f10x_gpio.h"
 #include "misc.h"
 
-/** @addtogroup Examples
-  * @{
-  */
+/** @addtogroup Apitox
+ * @{
+ */
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -35,6 +36,10 @@
 /* Private variables ---------------------------------------------------------*/
 static __IO uint32_t TimingDelay;
 static __IO uint32_t BurstEventsCounter;
+// Number impulses in the packet
+static uint16_t  BURST_LENGTH = 500;
+// Width of the pulses in the burst, ms
+static uint16_t  PULSE_WIDTH = 500;
 
 /* Private function prototypes -----------------------------------------------*/
 void Delay(__IO uint32_t nTime);
@@ -46,76 +51,71 @@ void EnableMainSeq();
 /* Private functions ---------------------------------------------------------*/
 
 /**
-  * @brief  Main program.
-  * @param  None
-  * @retval None
-  */
+ * @brief  Main program.
+ * @param  None
+ * @retval None
+ */
 int main(void)
 {
+    // Confugure base sequence timer and pulse burst timer
     BaseTimerSetup();
     PulseBurstTimerSetup();
-  /*!< At this stage the microcontroller clock setting is already configured, 
-       this is done through SystemInit() function which is called from startup
-       file (startup_stm32f10x_xx.s) before to branch to application main.
-       To reconfigure the default setting of SystemInit() function, refer to
-       system_stm32f10x.c file
-     */     
 
-  /* Initialize Leds LD3 and LD4 mounted on STM32VLDISCOVERY board */  
-  STM32vldiscovery_LEDInit(LED3);
-  STM32vldiscovery_LEDInit(LED4);
+    /* Initialize Leds LD3 and LD4 mounted on STM32VLDISCOVERY board */
+    STM32vldiscovery_LEDInit(LED3);
+    STM32vldiscovery_LEDInit(LED4);
 
-  /* Turn on LD3 and LD4 */
-  STM32vldiscovery_LEDOn(LED3);
-  //STM32vldiscovery_LEDOn(LED4);
+    /* Turn on LD3 and LD4 */
+    STM32vldiscovery_LEDOn(LED3);
+    //STM32vldiscovery_LEDOn(LED4);
 
-  /* Setup SysTick Timer for 1 msec interrupts  */
-  if (SysTick_Config(SystemCoreClock / 1000))
-  { 
-    /* Capture error */ 
-    while (1);
-  }
+    /* Setup SysTick Timer for 1 msec interrupts  */
+    if (SysTick_Config(SystemCoreClock / 1000))
+    {
+	/* Capture error */
+	while (1);
+    }
 
-  while (1)
-  {
-    /* Toggle LD3 */
-    STM32vldiscovery_LEDToggle(LED3);
+    while (1)
+    {
+	/* Toggle LD3 */
+	STM32vldiscovery_LEDToggle(LED3);
 
-    /* Insert 50 ms delay */
-    Delay(50);
+	/* Insert 50 ms delay */
+	Delay(50);
 
-    /* Toggle LD4 */
-   //STM32vldiscovery_LEDToggle(LED4);
+	/* Toggle LD4 */
+	//STM32vldiscovery_LEDToggle(LED4);
 
-    /* Insert 100 ms delay */
-    Delay(100);
-  }
+	/* Insert 100 ms delay */
+	Delay(100);
+    }
 }
 
 /**
-  * @brief  Inserts a delay time.
-  * @param  nTime: specifies the delay time length, in milliseconds.
-  * @retval None
-  */
+ * @brief  Inserts a delay time.
+ * @param  nTime: specifies the delay time length, in milliseconds.
+ * @retval None
+ */
 void Delay(__IO uint32_t nTime)
-{ 
-  TimingDelay = nTime;
+{
+    TimingDelay = nTime;
 
-  while(TimingDelay != 0);
+    while(TimingDelay != 0);
 }
 
 /**
-  * @brief  Decrements the TimingDelay variable.
-  * @param  None
-  * @retval None
-  */
+ * @brief  Decrements the TimingDelay variable.
+ * @param  None
+ * @retval None
+ */
 
 void TimingDelay_Decrement(void)
 {
-  if (TimingDelay != 0x00)
-  { 
-    TimingDelay--;
-  }
+    if (TimingDelay != 0x00)
+    {
+	TimingDelay--;
+    }
 }
 
 void HandleBurstTimerTrigger(void)
@@ -142,7 +142,7 @@ void HandleBurstTimerTrigger(void)
  * @retval None
  */
 void assert_failed(uint8_t* file, uint32_t line)
-{ 
+{
     /* User can add his own implementation to report the file name and line number,
 ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
 
@@ -156,43 +156,45 @@ ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
 /**
  * @brief Base (main sequence) timer setup: (~1 kHz period, 500 us impulses), PA_1 output
  */
-void BaseTimerSetup() 
+void BaseTimerSetup()
 {
     // Before we interact to timers we need to initialize proper periferial bus
     GPIO_InitTypeDef  gpio_init;
     TIM_TimeBaseInitTypeDef tim_base_init;
-    TIM_OCInitTypeDef  tim_oc_init; 
+    TIM_OCInitTypeDef  tim_oc_init;
     TIM_TypeDef* tim = TIM2;
 
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE); 
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE); 
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE); 
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
 
     // Init GPIO
     // Pin A_1 is attached to Tim2 OC2, set to alternative push-pull
     gpio_init.GPIO_Pin = GPIO_Pin_1;
     gpio_init.GPIO_Mode = GPIO_Mode_AF_PP;
     gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOA, &gpio_init); 
+    GPIO_Init(GPIOA, &gpio_init);
     // Configure the timer, 24 MHz internal clock, 1 MHz after prescaler
     TIM_TimeBaseStructInit(&tim_base_init);
-    tim_base_init.TIM_Period = 500; // Period 1 kHz, ratio 2
+    tim_base_init.TIM_Period = PULSE_WIDTH * 2 - 1; // Period 1 kHz, ratio 2
     tim_base_init.TIM_Prescaler = 23; // 1 us PSC output
     tim_base_init.TIM_ClockDivision = TIM_CKD_DIV1;
     tim_base_init.TIM_CounterMode = TIM_CounterMode_Up;
     TIM_TimeBaseInit(tim, &tim_base_init);
     // Configure timer output channel
-    tim_oc_init.TIM_OCMode = TIM_OCMode_Toggle;
+    tim_oc_init.TIM_OCMode = TIM_OCMode_PWM2;
     tim_oc_init.TIM_OutputState = TIM_OutputState_Enable;
     tim_oc_init.TIM_Pulse = 0;
-    tim_oc_init.TIM_OCPolarity = TIM_OCPolarity_High; 
+    tim_oc_init.TIM_OCPolarity = TIM_OCPolarity_High;
     TIM_OC2Init(tim, &tim_oc_init);
-    TIM_SetCompare2(tim, 20);
+    TIM_SetCompare2(tim, PULSE_WIDTH);
     // Configure I/O alternate function (AFIO), it is on APB2
     // Ref STM32F100 reference manual, sec. 2.3 Table 1
     TIM_OC2PreloadConfig(tim, TIM_OCPreload_Enable);
     TIM_ARRPreloadConfig(tim, ENABLE);
+    // Configure base seq timer as maser, update event as output trigger
+    TIM_SelectOutputTrigger(tim, TIM_TRGOSource_Update);
     // Remap output
     //RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
     //GPIO_PinRemapConfig( GPIO_FullRemap_TIM3, ENABLE );
@@ -200,32 +202,31 @@ void BaseTimerSetup()
 }
 
 /**
- * @brief Pulse burst timer setup, 1 sec period, 500 ms burst lenght, PA_7 output
+ * @brief Pulse burst timer setup, PA_7 output, sources by base sequence (TIM2)
  */
-void PulseBurstTimerSetup() 
+void PulseBurstTimerSetup()
 {
     GPIO_InitTypeDef  gpio_init;
     TIM_TimeBaseInitTypeDef tim_base_init;
-    TIM_OCInitTypeDef  tim_oc_init; 
+    TIM_OCInitTypeDef  tim_oc_init;
     NVIC_InitTypeDef nvic_init;
     TIM_TypeDef* tim = TIM3;
 
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE); 
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE); 
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE); 
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
 
     // Init GPIO
     // Pin PA_7 is attached to Tim3 OC2, set to alternative push-pull
     gpio_init.GPIO_Pin = GPIO_Pin_7;
     gpio_init.GPIO_Mode = GPIO_Mode_AF_PP;
     gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOA, &gpio_init); 
+    GPIO_Init(GPIOA, &gpio_init);
 
-    // Configure the timer, 24 MHz internal clock, 1 MHz after prescaler
     TIM_TimeBaseStructInit(&tim_base_init);
-    tim_base_init.TIM_Period = 500; // Period 500 ms
-    tim_base_init.TIM_Prescaler = 24000; // 1 ms PSC output
+    tim_base_init.TIM_Period = BURST_LENGTH - 1;
+    tim_base_init.TIM_Prescaler = 0; // Count each base impulse
     tim_base_init.TIM_ClockDivision = TIM_CKD_DIV1;
     tim_base_init.TIM_CounterMode = TIM_CounterMode_Up;
     TIM_TimeBaseInit(tim, &tim_base_init);
@@ -234,12 +235,10 @@ void PulseBurstTimerSetup()
     tim_oc_init.TIM_OCMode = TIM_OCMode_Toggle;
     tim_oc_init.TIM_OutputState = TIM_OutputState_Enable;
     tim_oc_init.TIM_Pulse = 0;
-    tim_oc_init.TIM_OCPolarity = TIM_OCPolarity_High; 
+    tim_oc_init.TIM_OCPolarity = TIM_OCPolarity_High;
     TIM_OC2Init(tim, &tim_oc_init);
-    TIM_SetCompare2(tim, 20);
+    TIM_SetCompare2(tim, 0);
 
-    // Configure I/O alternate function (AFIO), it is on APB2
-    // Ref STM32F100 reference manual, sec. 2.3 Table 1
     TIM_OC2PreloadConfig(tim, TIM_OCPreload_Enable);
     TIM_ARRPreloadConfig(tim, ENABLE);
 
@@ -250,6 +249,10 @@ void PulseBurstTimerSetup()
     nvic_init.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&nvic_init);
 
+    // Set slave mode: external clock mode
+    TIM_SelectSlaveMode(tim, TIM_SlaveMode_External1);
+    // Select external clock as ITR1 (TIM2 is connected to TIM3 ITR1)
+    TIM_ITRxExternalClockConfig(tim, TIM_TS_ITR1);
 
     // Enable interrupt on counter compare
     TIM_ITConfig(tim, TIM_IT_CC2, ENABLE);
@@ -267,18 +270,18 @@ void DisableMainSeq()
     gpio_init.GPIO_Pin = GPIO_Pin_1;
     gpio_init.GPIO_Mode = GPIO_Mode_Out_PP;
     gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOA, &gpio_init); 
+    GPIO_Init(GPIOA, &gpio_init);
     GPIO_ResetBits(GPIOA, GPIO_Pin_1);
 }
 
 void EnableMainSeq()
 {
-    // Connect output to timer 
+    // Connect output to timer
     GPIO_InitTypeDef  gpio_init;
     gpio_init.GPIO_Pin = GPIO_Pin_1;
     gpio_init.GPIO_Mode = GPIO_Mode_AF_PP;
     gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOA, &gpio_init); 
+    GPIO_Init(GPIOA, &gpio_init);
 }
 
 
