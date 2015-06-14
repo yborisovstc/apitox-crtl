@@ -118,6 +118,11 @@ void TimingDelay_Decrement(void)
     }
 }
 
+/**
+ * @brief  Handles burst timer event: swithces pulses output on/off
+ * @param  None
+ * @retval None
+ */
 void HandleBurstTimerTrigger(void)
 {
     if (TIM_GetITStatus(TIM3, TIM_IT_CC2) != RESET)
